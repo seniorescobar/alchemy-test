@@ -3,4 +3,9 @@ services:
     db:
         image: mysql/mysql-server:8.0
         ports:
-        - 31449:3306
+            - 3306:3306
+        environment:
+            MYSQL_DATABASE: "alchemy-test-db"
+            MYSQL_USER: "alchemy-test"
+            MYSQL_PASSWORD: "qwerty123"
+            MYSQL_ROOT_PASSWORD: "qwerty123"

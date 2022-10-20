@@ -1,12 +1,18 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	httpPkg "net/http"
 	"time"
 
 	"github.com/gorilla/mux"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/golang-migrate/migrate/v4"
+	mysqlPkg "github.com/golang-migrate/migrate/v4/database/mysql"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"github.com/seniorescobar/alchemy-test/internal/domain/spacecraft"
 	"github.com/seniorescobar/alchemy-test/internal/gateway/http"
@@ -20,7 +26,13 @@ func main() {
 }
 
 func run() error {
-	repo := mysql.NewSpacecraftRepository()
+	db, err := initDb()
+	if err != nil {
+		return fmt.Errorf("error initalizing db conn: %w", err)
+	}
+	defer db.Close()
+
+	repo := mysql.NewSpacecraftRepository(db)
 	svc := spacecraft.NewService(repo)
 	gw := http.NewSpacecraftGateway(svc)
 
@@ -29,6 +41,31 @@ func run() error {
 	}
 
 	return nil
+}
+
+func initDb() (*sql.DB, error) {
+	db, err := sql.Open("mysql", "alchemy-test:qwerty123@tcp(localhost:3306)/alchemy-test-db?multiStatements=true")
+	if err != nil {
+		return nil, err
+	}
+
+	driver, err := mysqlPkg.WithInstance(db, &mysqlPkg.Config{})
+	if err != nil {
+		return nil, err
+	}
+
+	m, err := migrate.NewWithDatabaseInstance("file://../internal/storage/mysql/migrations", "mysql", driver)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := m.Up(); err != nil {
+		if err.Error() != "no change" {
+			return nil, err
+		}
+	}
+
+	return db, nil
 }
 
 func startServer(gw *http.SpacecraftGateway) error {

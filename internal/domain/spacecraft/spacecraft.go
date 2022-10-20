@@ -1,19 +1,19 @@
 package spacecraft
 
 type Spacecraft struct {
-	ID       int
-	Name     string
-	Class    string
-	Armament []Armament
-	Crew     uint
-	Image    string
-	Value    float64
-	Status   Status
+	ID        int        `json:"id"`
+	Name      string     `json:"name"`
+	Class     string     `json:"class"`
+	Armaments []Armament `json:"armaments"`
+	Crew      uint       `json:"crew"`
+	Image     string     `json:"image"`
+	Value     float64    `json:"value"`
+	Status    Status     `json:"status"`
 }
 
 type Armament struct {
-	Title string
-	Qty   string
+	Title string `json:"title"`
+	Qty   string `json:"qty"`
 }
 
 type Status string
