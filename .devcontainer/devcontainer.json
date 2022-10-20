@@ -1,0 +1,25 @@
+{
+	"name": "Go",
+	"service": "dev",
+	"dockerComposeFile": [
+		"../docker-compose.yaml",
+		"docker-compose.yaml"
+	],
+	"runServices": [
+		"db"
+	],
+	"workspaceFolder": "/alchemy-test",
+	"settings": { 
+		"go.toolsManagement.checkForUpdates": "local",
+		"go.useLanguageServer": true,
+		"go.gopath": "/go",
+		"go.goroot": "/usr/local/go"
+
+	},
+	"extensions": [
+		"golang.Go",
+		"GitHub.vscode-pull-request-github",
+		"eamodio.gitlens"
+	],
+	"shutdownAction": "stopCompose"
+}

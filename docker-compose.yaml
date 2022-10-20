@@ -1,0 +1,6 @@
+version: '3'
+services:
+    db:
+        image: mysql/mysql-server:8.0
+        ports:
+        - 31449:3306
