@@ -32,3 +32,15 @@ func (r *SpacecraftRepository) Get(ctx context.Context, id uuid.UUID) (spacecraf
 		Name: "spacecraft",
 	}, nil
 }
+
+func (r *SpacecraftRepository) Create(ctx context.Context, spacecraft spacecraft.Spacecraft) error {
+	return nil
+}
+
+func (r *SpacecraftRepository) Update(ctx context.Context, spacecraft spacecraft.Spacecraft) error {
+	return nil
+}
+
+func (r *SpacecraftRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	return nil
+}
