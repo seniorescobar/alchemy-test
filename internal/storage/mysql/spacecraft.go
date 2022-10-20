@@ -25,3 +25,10 @@ func (r *SpacecraftRepository) List(ctx context.Context) ([]spacecraft.Spacecraf
 		},
 	}, nil
 }
+
+func (r *SpacecraftRepository) Get(ctx context.Context, id uuid.UUID) (spacecraft.Spacecraft, error) {
+	return spacecraft.Spacecraft{
+		ID:   id,
+		Name: "spacecraft",
+	}, nil
+}

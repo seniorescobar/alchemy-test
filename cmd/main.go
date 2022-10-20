@@ -34,6 +34,7 @@ func run() error {
 func startServer(gw *http.SpacecraftGateway) error {
 	router := mux.NewRouter()
 	router.HandleFunc("/", gw.List).Methods(httpPkg.MethodGet)
+	router.HandleFunc("/{id}", gw.Get).Methods(httpPkg.MethodGet)
 
 	srv := &httpPkg.Server{
 		Handler:      router,
