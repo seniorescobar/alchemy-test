@@ -3,9 +3,7 @@ package mysql
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
@@ -77,6 +75,12 @@ func (r *SpacecraftRepository) List(ctx context.Context, filters ...spacecraft.F
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
 
+		armaments, err := armamentsFromJSON(sc.Armaments)
+		if err != nil {
+			return nil, fmt.Errorf("error unmarshaling armaments: %w", err)
+		}
+
+		sc.Spacecraft.Armaments = armaments
 		scs = append(scs, sc.Spacecraft)
 	}
 
@@ -113,6 +117,12 @@ func (r *SpacecraftRepository) Get(ctx context.Context, id int) (spacecraft.Spac
 		return spacecraft.Spacecraft{}, fmt.Errorf("error scanning row: %w", err)
 	}
 
+	armaments, err := armamentsFromJSON(sc.Armaments)
+	if err != nil {
+		return spacecraft.Spacecraft{}, fmt.Errorf("error unmarshaling armaments: %w", err)
+	}
+
+	sc.Spacecraft.Armaments = armaments
 	return sc.Spacecraft, nil
 }
 
@@ -217,26 +227,6 @@ type Spacecraft struct {
 	spacecraft.Spacecraft
 
 	Armaments json.RawMessage
-}
-
-func (s *Spacecraft) Scan(src interface{}) error {
-	b, ok := src.([]byte)
-	if !ok {
-		return errors.New("error asserting to []byte")
-	}
-
-	return json.Unmarshal(b, &s.Spacecraft.Armaments)
-}
-
-func (s Spacecraft) Value() (driver.Value, error) {
-	b, err := json.Marshal(s.Spacecraft.Armaments)
-	if err != nil {
-		return nil, err
-	}
-
-	s.Armaments = b
-
-	return s, nil
 }
 
 func armamentsToJSON(armaments []spacecraft.Armament) (json.RawMessage, error) {
