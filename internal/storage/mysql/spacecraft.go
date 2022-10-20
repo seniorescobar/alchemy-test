@@ -83,12 +83,6 @@ func (r *SpacecraftRepository) List(ctx context.Context, filters ...spacecraft.F
 	return scs, nil
 }
 
-func WithNameFilter(name string) func(sb sq.SelectBuilder) {
-	return func(sb sq.SelectBuilder) {
-		sb.Where(sq.Eq{colName: name})
-	}
-}
-
 func (r *SpacecraftRepository) Get(ctx context.Context, id int) (spacecraft.Spacecraft, error) {
 	query, args, err := sq.Select(
 		colID,
