@@ -13,7 +13,7 @@ import (
 
 type (
 	service interface {
-		List(context.Context) ([]spacecraft.Spacecraft, error)
+		List(context.Context, ...spacecraft.Filter) ([]spacecraft.Spacecraft, error)
 		Get(context.Context, int) (spacecraft.Spacecraft, error)
 		Create(context.Context, spacecraft.Spacecraft) error
 		Update(context.Context, spacecraft.Spacecraft) error
@@ -32,7 +32,14 @@ func NewSpacecraftGateway(svc service) *SpacecraftGateway {
 }
 
 func (g *SpacecraftGateway) List(w http.ResponseWriter, r *http.Request) {
-	spacecrafts, err := g.svc.List(r.Context())
+	var filters []spacecraft.Filter
+	for _, filter := range spacecraft.AllowedFilters {
+		if v := r.FormValue(filter); v != "" {
+			filters = append(filters, spacecraft.Filter{Key: filter, Value: v})
+		}
+	}
+
+	spacecrafts, err := g.svc.List(r.Context(), filters...)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

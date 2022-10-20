@@ -7,7 +7,7 @@ type Spacecraft struct {
 	Armaments []Armament `json:"armaments"`
 	Crew      uint       `json:"crew"`
 	Image     string     `json:"image"`
-	Value     float64    `json:"value"`
+	Val       float64    `json:"value"`
 	Status    Status     `json:"status"`
 }
 

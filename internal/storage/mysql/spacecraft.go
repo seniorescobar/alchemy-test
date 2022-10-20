@@ -3,7 +3,9 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
@@ -33,24 +35,91 @@ func NewSpacecraftRepository(db *sql.DB) *SpacecraftRepository {
 	}
 }
 
-func (r *SpacecraftRepository) List(ctx context.Context) ([]spacecraft.Spacecraft, error) {
-	return []spacecraft.Spacecraft{
-		{
-			ID:   1,
-			Name: "spacecraft 1",
-		},
-		{
-			ID:   2,
-			Name: "spacecraft 2",
-		},
-	}, nil
+func (r *SpacecraftRepository) List(ctx context.Context, filters ...spacecraft.Filter) ([]spacecraft.Spacecraft, error) {
+	sb := sq.
+		Select(
+			colID,
+			colName,
+			colCrew,
+			colImage,
+			colValue,
+			colStatus,
+			colArmaments,
+		).
+		From(table)
+
+	for _, filter := range filters {
+		sb = sb.Where(sq.Eq{filter.Key: filter.Value})
+	}
+
+	query, args, err := sb.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("error building query: %w", err)
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("error querying rows: %w", err)
+	}
+
+	scs := make([]spacecraft.Spacecraft, 0)
+	for rows.Next() {
+		var sc Spacecraft
+		if err := rows.Scan(
+			&sc.ID,
+			&sc.Name,
+			&sc.Crew,
+			&sc.Image,
+			&sc.Val,
+			&sc.Status,
+			&sc.Armaments,
+		); err != nil {
+			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+
+		scs = append(scs, sc.Spacecraft)
+	}
+
+	return scs, nil
+}
+
+func WithNameFilter(name string) func(sb sq.SelectBuilder) {
+	return func(sb sq.SelectBuilder) {
+		sb.Where(sq.Eq{colName: name})
+	}
 }
 
 func (r *SpacecraftRepository) Get(ctx context.Context, id int) (spacecraft.Spacecraft, error) {
-	return spacecraft.Spacecraft{
-		ID:   id,
-		Name: "spacecraft",
-	}, nil
+	query, args, err := sq.Select(
+		colID,
+		colName,
+		colCrew,
+		colImage,
+		colValue,
+		colStatus,
+		colArmaments,
+	).
+		From(table).
+		Where(sq.Eq{colID: id}).
+		ToSql()
+	if err != nil {
+		return spacecraft.Spacecraft{}, fmt.Errorf("error building query: %w", err)
+	}
+
+	var sc Spacecraft
+	if err := r.db.QueryRowContext(ctx, query, args...).Scan(
+		&sc.ID,
+		&sc.Name,
+		&sc.Crew,
+		&sc.Image,
+		&sc.Val,
+		&sc.Status,
+		&sc.Armaments,
+	); err != nil {
+		return spacecraft.Spacecraft{}, fmt.Errorf("error scanning row: %w", err)
+	}
+
+	return sc.Spacecraft, nil
 }
 
 func (r *SpacecraftRepository) Create(ctx context.Context, spacecraft spacecraft.Spacecraft) error {
@@ -72,7 +141,7 @@ func (r *SpacecraftRepository) Create(ctx context.Context, spacecraft spacecraft
 		spacecraft.Class,
 		spacecraft.Crew,
 		spacecraft.Image,
-		spacecraft.Value,
+		spacecraft.Val,
 		spacecraft.Status,
 		armaments,
 	).ToSql()
@@ -93,6 +162,32 @@ func (r *SpacecraftRepository) Update(ctx context.Context, spacecraft spacecraft
 
 func (r *SpacecraftRepository) Delete(ctx context.Context, id int) error {
 	return nil
+}
+
+type Spacecraft struct {
+	spacecraft.Spacecraft
+
+	Armaments json.RawMessage
+}
+
+func (s *Spacecraft) Scan(src interface{}) error {
+	b, ok := src.([]byte)
+	if !ok {
+		return errors.New("error asserting to []byte")
+	}
+
+	return json.Unmarshal(b, &s.Spacecraft.Armaments)
+}
+
+func (s Spacecraft) Value() (driver.Value, error) {
+	b, err := json.Marshal(s.Spacecraft.Armaments)
+	if err != nil {
+		return nil, err
+	}
+
+	s.Armaments = b
+
+	return s, nil
 }
 
 func armamentsToJSON(armaments []spacecraft.Armament) (json.RawMessage, error) {
