@@ -126,11 +126,16 @@ func (g *SpacecraftGateway) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := g.svc.Delete(r.Context(), id); err != nil {
+		if errors.Is(err, spacecraft.ErrSpacecraftNotFound) {
+			renderError(w, http.StatusNotFound, err.Error())
+			return
+		}
+
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	renderSuccess(w, http.StatusNoContent)
+	renderSuccess(w, http.StatusOK)
 }
 
 func isValidationErr(err error) bool {

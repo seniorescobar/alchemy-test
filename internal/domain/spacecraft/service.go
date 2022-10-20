@@ -2,6 +2,7 @@ package spacecraft
 
 import (
 	"context"
+	"errors"
 	"net/url"
 )
 
@@ -28,6 +29,8 @@ var (
 	ErrInvalidImage  = &ValidationErr{"invalid image"}
 	ErrInvalidStatus = &ValidationErr{"invalid status"}
 	ErrInvalidFilter = &ValidationErr{"invalid filter"}
+
+	ErrSpacecraftNotFound = errors.New("spacecraft not found")
 
 	AllowedFilters = []string{"name", "class", "status"}
 )

@@ -150,11 +150,66 @@ func (r *SpacecraftRepository) Create(ctx context.Context, spacecraft spacecraft
 	return nil
 }
 
-func (r *SpacecraftRepository) Update(ctx context.Context, spacecraft spacecraft.Spacecraft) error {
+func (r *SpacecraftRepository) Update(ctx context.Context, sc spacecraft.Spacecraft) error {
+	armaments, err := armamentsToJSON(sc.Armaments)
+	if err != nil {
+		return fmt.Errorf("error marshaling armaments: %w", err)
+	}
+
+	query, args, err := sq.
+		Update(table).
+		SetMap(map[string]interface{}{
+			colName:      sc.Name,
+			colClass:     sc.Class,
+			colCrew:      sc.Crew,
+			colImage:     sc.Image,
+			colValue:     sc.Val,
+			colStatus:    sc.Status,
+			colArmaments: armaments,
+		}).
+		Where(sq.Eq{colID: sc.ID}).
+		ToSql()
+	if err != nil {
+		return err
+	}
+
+	res, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("error executing query: %w", err)
+	}
+
+	ra, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if ra == 0 {
+		return spacecraft.ErrSpacecraftNotFound
+	}
+
 	return nil
 }
 
 func (r *SpacecraftRepository) Delete(ctx context.Context, id int) error {
+	query, args, err := sq.Delete(table).Where(sq.Eq{colID: id}).ToSql()
+	if err != nil {
+		return fmt.Errorf("error building query: %w", err)
+	}
+
+	res, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("error executing query: %w", err)
+	}
+
+	ra, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if ra == 0 {
+		return spacecraft.ErrSpacecraftNotFound
+	}
+
 	return nil
 }
 
