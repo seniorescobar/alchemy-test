@@ -1,9 +1,7 @@
 package spacecraft
 
-import "github.com/google/uuid"
-
 type Spacecraft struct {
-	ID       uuid.UUID
+	ID       int
 	Name     string
 	Class    string
 	Armament []Armament

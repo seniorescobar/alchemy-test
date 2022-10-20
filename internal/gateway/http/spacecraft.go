@@ -3,9 +3,10 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strconv"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/seniorescobar/alchemy-test/internal/domain/spacecraft"
 )
@@ -13,10 +14,10 @@ import (
 type (
 	service interface {
 		List(context.Context) ([]spacecraft.Spacecraft, error)
-		Get(context.Context, uuid.UUID) (spacecraft.Spacecraft, error)
+		Get(context.Context, int) (spacecraft.Spacecraft, error)
 		Create(context.Context, spacecraft.Spacecraft) error
 		Update(context.Context, spacecraft.Spacecraft) error
-		Delete(context.Context, uuid.UUID) error
+		Delete(context.Context, int) error
 	}
 
 	SpacecraftGateway struct {
@@ -46,7 +47,7 @@ func (g *SpacecraftGateway) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g *SpacecraftGateway) Get(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(mux.Vars(r)["id"])
+	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
 		renderError(w, http.StatusBadRequest, "invalid spacecraft ID provided")
 		return
@@ -75,6 +76,11 @@ func (g *SpacecraftGateway) Create(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if err := g.svc.Create(r.Context(), spacecraft); err != nil {
+		if isValidationErr(err) {
+			renderError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -83,7 +89,7 @@ func (g *SpacecraftGateway) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g *SpacecraftGateway) Update(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(mux.Vars(r)["id"])
+	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
 		renderError(w, http.StatusBadRequest, "invalid spacecraft ID provided")
 		return
@@ -106,7 +112,7 @@ func (g *SpacecraftGateway) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g *SpacecraftGateway) Delete(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(mux.Vars(r)["id"])
+	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
 		renderError(w, http.StatusBadRequest, "invalid spacecraft ID provided")
 		return
@@ -118,4 +124,9 @@ func (g *SpacecraftGateway) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderSuccess(w, http.StatusNoContent)
+}
+
+func isValidationErr(err error) bool {
+	var valErr *spacecraft.ValidationErr
+	return errors.As(err, &valErr)
 }

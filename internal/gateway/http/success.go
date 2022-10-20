@@ -10,10 +10,9 @@ type SuccessResponse struct {
 }
 
 func renderSuccess(w http.ResponseWriter, status int) {
+	w.WriteHeader(status)
+
 	if err := json.NewEncoder(w).Encode(SuccessResponse{true}); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
-
-	w.WriteHeader(status)
 }

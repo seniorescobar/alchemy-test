@@ -3,7 +3,6 @@ package mysql
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/seniorescobar/alchemy-test/internal/domain/spacecraft"
 )
 
@@ -16,17 +15,17 @@ func NewSpacecraftRepository() *SpacecraftRepository {
 func (r *SpacecraftRepository) List(ctx context.Context) ([]spacecraft.Spacecraft, error) {
 	return []spacecraft.Spacecraft{
 		{
-			ID:   uuid.New(),
+			ID:   1,
 			Name: "spacecraft 1",
 		},
 		{
-			ID:   uuid.New(),
+			ID:   2,
 			Name: "spacecraft 2",
 		},
 	}, nil
 }
 
-func (r *SpacecraftRepository) Get(ctx context.Context, id uuid.UUID) (spacecraft.Spacecraft, error) {
+func (r *SpacecraftRepository) Get(ctx context.Context, id int) (spacecraft.Spacecraft, error) {
 	return spacecraft.Spacecraft{
 		ID:   id,
 		Name: "spacecraft",
@@ -41,6 +40,6 @@ func (r *SpacecraftRepository) Update(ctx context.Context, spacecraft spacecraft
 	return nil
 }
 
-func (r *SpacecraftRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *SpacecraftRepository) Delete(ctx context.Context, id int) error {
 	return nil
 }
