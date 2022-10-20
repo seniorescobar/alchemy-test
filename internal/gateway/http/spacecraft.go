@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -15,8 +14,8 @@ type (
 	service interface {
 		List(context.Context) ([]spacecraft.Spacecraft, error)
 		Get(context.Context, uuid.UUID) (spacecraft.Spacecraft, error)
-		Create(context.Context, spacecraft.Spacecraft) (spacecraft.Spacecraft, error)
-		Update(context.Context, spacecraft.Spacecraft) (spacecraft.Spacecraft, error)
+		Create(context.Context, spacecraft.Spacecraft) error
+		Update(context.Context, spacecraft.Spacecraft) error
 		Delete(context.Context, uuid.UUID) error
 	}
 
@@ -38,12 +37,12 @@ func (g *SpacecraftGateway) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-
 	if err := json.NewEncoder(w).Encode(spacecrafts); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (g *SpacecraftGateway) Get(w http.ResponseWriter, r *http.Request) {
@@ -59,12 +58,12 @@ func (g *SpacecraftGateway) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-
 	if err := json.NewEncoder(w).Encode(spacecraft); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (g *SpacecraftGateway) Create(w http.ResponseWriter, r *http.Request) {
@@ -75,18 +74,12 @@ func (g *SpacecraftGateway) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	spacecraft, err := g.svc.Create(r.Context(), spacecraft)
-	if err != nil {
+	if err := g.svc.Create(r.Context(), spacecraft); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-
-	if err := json.NewEncoder(w).Encode(spacecraft); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	renderSuccess(w, http.StatusCreated)
 }
 
 func (g *SpacecraftGateway) Update(w http.ResponseWriter, r *http.Request) {
@@ -104,18 +97,12 @@ func (g *SpacecraftGateway) Update(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	spacecraft.ID = id
-	updatedSpacecraft, err := g.svc.Update(r.Context(), spacecraft)
-	if err != nil {
+	if err := g.svc.Update(r.Context(), spacecraft); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(w).Encode(updatedSpacecraft); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	renderSuccess(w, http.StatusOK)
 }
 
 func (g *SpacecraftGateway) Delete(w http.ResponseWriter, r *http.Request) {
@@ -130,10 +117,5 @@ func (g *SpacecraftGateway) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func renderError(w http.ResponseWriter, status int, msg string) {
-	w.WriteHeader(status)
-	fmt.Fprintln(w, msg)
+	renderSuccess(w, http.StatusNoContent)
 }

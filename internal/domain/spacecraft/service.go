@@ -44,22 +44,12 @@ func (s *Service) Get(ctx context.Context, id uuid.UUID) (Spacecraft, error) {
 	return spacecraft, nil
 }
 
-func (s *Service) Create(ctx context.Context, spacecraft Spacecraft) (Spacecraft, error) {
-	spacecraft.ID = uuid.New()
-
-	if err := s.repo.Create(ctx, spacecraft); err != nil {
-		return Spacecraft{}, err
-	}
-
-	return spacecraft, nil
+func (s *Service) Create(ctx context.Context, spacecraft Spacecraft) error {
+	return s.repo.Create(ctx, spacecraft)
 }
 
-func (s *Service) Update(ctx context.Context, spacecraft Spacecraft) (Spacecraft, error) {
-	if err := s.repo.Update(ctx, spacecraft); err != nil {
-		return Spacecraft{}, err
-	}
-
-	return spacecraft, nil
+func (s *Service) Update(ctx context.Context, spacecraft Spacecraft) error {
+	return s.repo.Update(ctx, spacecraft)
 }
 
 func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
